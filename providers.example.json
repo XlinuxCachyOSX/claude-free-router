@@ -1,0 +1,94 @@
+{
+  "host": "0.0.0.0",
+  "port": 8787,
+  "providers": [
+    {
+      "name": "groq",
+      "priority": 1,
+      "base_url": "https://api.groq.com/openai/v1",
+      "api_key_env": "GROQ_API_KEY",
+      "default_model": "llama-3.3-70b-versatile",
+      "models": {
+        "claude-3-5-sonnet*": "llama-3.3-70b-versatile",
+        "claude-3-7-sonnet*": "llama-3.3-70b-versatile",
+        "claude-3-opus*": "llama-3.3-70b-versatile",
+        "claude-3-5-haiku*": "llama-3.1-8b-instant",
+        "claude-3-haiku*": "llama-3.1-8b-instant"
+      }
+    },
+    {
+      "name": "gemini",
+      "priority": 2,
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "api_key_env": "GEMINI_API_KEY",
+      "default_model": "gemini-2.0-flash",
+      "models": {
+        "claude-3-5-sonnet*": "gemini-2.0-flash",
+        "claude-3-7-sonnet*": "gemini-2.0-flash",
+        "claude-3-opus*": "gemini-2.5-pro",
+        "claude-3-5-haiku*": "gemini-2.0-flash",
+        "claude-3-haiku*": "gemini-2.0-flash"
+      }
+    },
+    {
+      "name": "cerebras",
+      "priority": 3,
+      "base_url": "https://api.cerebras.ai/v1",
+      "api_key_env": "CEREBRAS_API_KEY",
+      "default_model": "llama3.3-70b",
+      "models": {
+        "claude-3-5-sonnet*": "llama3.3-70b",
+        "claude-3-5-haiku*": "llama3.1-8b",
+        "*": "llama3.3-70b"
+      }
+    },
+    {
+      "name": "openrouter",
+      "priority": 4,
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "default_model": "deepseek/deepseek-chat-v3-0324:free",
+      "models": {
+        "claude-3-5-sonnet*": "deepseek/deepseek-chat-v3-0324:free",
+        "claude-3-opus*": "deepseek/deepseek-r1:free",
+        "*": "deepseek/deepseek-chat-v3-0324:free"
+      },
+      "extra_headers": {
+        "HTTP-Referer": "https://github.com/",
+        "X-Title": "claude-free-router"
+      }
+    },
+    {
+      "name": "mistral",
+      "priority": 5,
+      "base_url": "https://api.mistral.ai/v1",
+      "api_key_env": "MISTRAL_API_KEY",
+      "default_model": "mistral-small-latest",
+      "models": {
+        "*": "mistral-small-latest"
+      }
+    },
+    {
+      "name": "github-models",
+      "priority": 6,
+      "base_url": "https://models.inference.ai.azure.com",
+      "api_key_env": "GITHUB_TOKEN",
+      "default_model": "gpt-4o-mini",
+      "models": {
+        "claude-3-5-sonnet*": "gpt-4o",
+        "claude-3-5-haiku*": "gpt-4o-mini",
+        "*": "gpt-4o-mini"
+      }
+    },
+    {
+      "name": "together",
+      "priority": 7,
+      "base_url": "https://api.together.xyz/v1",
+      "api_key_env": "TOGETHER_API_KEY",
+      "default_model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "models": {
+        "*": "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+      }
+    }
+  ]
+}
