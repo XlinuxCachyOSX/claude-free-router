@@ -31,17 +31,19 @@ Modifica `.env` e inserisci almeno una API key (di qualsiasi provider).
 
 ## Provider gratuiti (prendi le chiavi qui)
 
-| Provider | Link chiave | Modelli gratuiti |
-|----------|-------------|------------------|
-| **Groq** | https://console.groq.com/keys | gpt-oss-120b, gpt-oss-20b |
-| **Google Gemini** | https://aistudio.google.com/app/apikey | gemini-2.0-flash |
-| **Cerebras** | https://cloud.cerebras.ai/ | llama3.3-70b |
-| **OpenRouter** | https://openrouter.ai/keys | modelli `:free` |
-| **Mistral** | https://console.mistral.ai/api-keys/ | mistral-small |
-| **GitHub Models** | https://github.com/settings/tokens | gpt-4o, gpt-4o-mini |
-| **Together AI** | https://api.together.xyz/settings/api-keys | llama-3.3-70b |
+| Provider | Link chiave | Modelli gratuiti | Note |
+|----------|-------------|------------------|------|
+| **Groq** | https://console.groq.com/keys | gpt-oss-120b, gpt-oss-20b | Velocissimo, ma quota TPM bassa (~8000): su prompt grandi (Claude Code) può rispondere **413** |
+| **Google Gemini** | https://aistudio.google.com/app/apikey | gemini-3.8-flash | Ottimo per il tool calling (gestisce `thought_signature`) |
+| **OpenRouter** ⭐ | https://openrouter.ai/keys | modelli `:free` | **Consigliato come fallback**: es. `nvidia/nemotron-3-ultra-550b-a55b:free` (1M di contesto, supporta i tool) |
+| **Cerebras** | https://cloud.cerebras.ai/ | llama3.3-70b | Molto veloce (tier gratuito) |
+| **Mistral** | https://console.mistral.ai/api-keys/ | mistral-small | ⚠️ Ora richiede un **piano a pagamento** per usare le API |
+| **GitHub Models** | https://github.com/settings/tokens | gpt-4o, gpt-4o-mini | ⚠️ Spesso **non raggiungibile**/inaffidabile: l'endpoint può rispondere con stub invece dell'API |
+| **Together AI** | https://api.together.xyz/settings/api-keys | llama-3.3-70b | |
 
 Ti basta **una** chiave per iniziare. Più ne aggiungi, più il fallback è robusto.
+
+> **Combinazione consigliata:** **Groq + Gemini + OpenRouter**. Groq risponde subito alle richieste piccole, Gemini regge il tool calling, e OpenRouter (modelli `:free` con contesto enorme) fa da rete di sicurezza quando gli altri esauriscono le quote. Vedi la sezione *Come funziona il fallback*.
 
 ## Avvio
 
@@ -136,7 +138,17 @@ Modifica `providers.json`:
 
 ## Come funziona il fallback
 
-Per ogni richiesta il router prova i provider in ordine di `priority`. Se un provider risponde con **401/403/404/429/5xx**, passa al prossimo automaticamente. Così quando Groq esaurisce la quota oraria, subentra Gemini, poi Cerebras, ecc.
+Per ogni richiesta il router prova i provider **in ordine di `priority`** (i provider senza chiave in `.env` vengono saltati). Se un provider risponde con **401/403/404/413/429/5xx**, passa automaticamente al prossimo.
+
+Esempio reale con Claude Code (prompt ~18k token):
+
+```
+groq        -> 413 (supera il limite TPM gratuito)
+gemini      -> 429 (quota esaurita)
+openrouter  -> 200 ✅
+```
+
+Così quando Groq esaurisce la quota oraria, subentra Gemini, poi OpenRouter, ecc.
 
 ## Limiti
 
