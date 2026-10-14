@@ -45,11 +45,16 @@ Ti basta **una** chiave per iniziare. Più ne aggiungi, più il fallback è robu
 
 ## Avvio
 
+### Linux / macOS
 ```bash
 ./run.sh
 # oppure
 python3 server.py
 ```
+
+### Windows
+Doppio click su **`run.bat`** (oppure in PowerShell: `./run.ps1`).
+Lo script crea `providers.json`, carica il `.env` e avvia il server.
 
 Vedrai:
 ```
@@ -68,6 +73,14 @@ claude
 ```
 
 Per renderlo permanente, aggiungi le due righe a `~/.bashrc` o `~/.config/fish/config.fish`.
+
+**Windows (PowerShell):**
+```powershell
+$env:ANTHROPIC_BASE_URL = "http://localhost:8787"
+$env:ANTHROPIC_API_KEY = "free"
+claude
+```
+Per renderlo permanente: `setx ANTHROPIC_BASE_URL "http://localhost:8787"` e riapri il terminale.
 
 ## Usarlo con l'SDK Anthropic (Python)
 
@@ -130,6 +143,20 @@ Per ogni richiesta il router prova i provider in ordine di `priority`. Se un pro
 - La traduzione dei tool è best-effort: modelli molto più piccoli possono sbagliare i formati.
 - Alcuni provider non supportano immagini: verranno ignorate o daranno errore.
 - Le quote gratuite hanno limiti di richieste/minuto.
+
+## Struttura
+
+```
+claude-free-router/
+├── server.py                # Proxy Anthropic -> OpenAI-compatibile
+├── providers.example.json   # Config provider (copia in providers.json)
+├── .env.example             # Template API key (copia in .env)
+├── run.sh                   # Avvio Linux/macOS
+├── run.bat                  # Avvio Windows (CMD)
+├── run.ps1                  # Avvio Windows (PowerShell)
+├── README.md
+└── LICENSE
+```
 
 ## Licenza
 
