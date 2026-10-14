@@ -168,10 +168,14 @@ def anthropic_to_openai(body, provider):
         else:
             messages.append({"role": role, "content": content})
 
+    max_tokens = body.get("max_tokens", 4096)
+    cap = provider.get("max_tokens_cap")
+    if cap:
+        max_tokens = min(max_tokens, cap)
     payload = {
         "model": model,
         "messages": messages,
-        "max_tokens": body.get("max_tokens", 4096),
+        "max_tokens": max_tokens,
     }
     if "temperature" in body:
         payload["temperature"] = body["temperature"]
@@ -282,7 +286,7 @@ def iter_providers_attempt(providers, payload, requested_model, body):
         except UpstreamError as e:
             last_err = e
             # 429 (rate limit) o 5xx -> prova il prossimo provider
-            if e.status in (401, 403, 404, 429, 500, 502, 503, 504):
+            if e.status in (401, 403, 404, 413, 429, 500, 502, 503, 504):
                 print(f"[~] {provider['name']} ha fallito ({e.status}), provo il prossimo...")
                 continue
             raise
