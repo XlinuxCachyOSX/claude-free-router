@@ -123,6 +123,15 @@ Modifica `providers.json`:
 - **`models`**: mappa `pattern` → `modello` (supporta `*`, es. `claude-3-5-sonnet*`)
 - **`extra_headers`**: header aggiuntivi (es. OpenRouter)
 
+Variabili d'ambiente utili (hanno priorità su `providers.json`):
+
+| Variabile | Default | Descrizione |
+|-----------|---------|-------------|
+| `CFR_HOST` | `0.0.0.0` | Indirizzo di ascolto |
+| `CFR_PORT` | `8787` | Porta di ascolto |
+| `CFR_TIMEOUT` | `120` | Timeout (secondi) verso i provider |
+| `CFR_CONFIG` | `providers.json` | Percorso alternativo della config |
+
 ### Aggiungere un provider
 
 ```json

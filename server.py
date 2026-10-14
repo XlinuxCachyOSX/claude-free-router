@@ -39,8 +39,8 @@ def load_config():
         sys.exit(1)
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
-    cfg.setdefault("host", os.environ.get("CFR_HOST", "0.0.0.0"))
-    cfg.setdefault("port", int(os.environ.get("CFR_PORT", "8787")))
+    cfg["host"] = os.environ.get("CFR_HOST") or cfg.get("host", "0.0.0.0")
+    cfg["port"] = int(os.environ.get("CFR_PORT") or cfg.get("port", 8787))
     providers = []
     for p in cfg.get("providers", []):
         key = p.get("api_key")
