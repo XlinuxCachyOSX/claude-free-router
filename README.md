@@ -21,7 +21,7 @@ Claude Code  ──►  claude-free-router  ──►  Groq / Gemini / Cerebras 
 ## Installazione
 
 ```bash
-git clone https://github.com/TUOUTENTE/claude-free-router.git
+git clone https://github.com/XlinuxCachyOSX/claude-free-router.git
 cd claude-free-router
 cp providers.example.json providers.json
 cp .env.example .env
