@@ -137,14 +137,18 @@ def anthropic_to_openai(body, provider):
             for block in content:
                 btype = block.get("type")
                 if btype == "tool_use":
-                    tool_calls.append({
+                    tc = {
                         "id": block.get("id"),
                         "type": "function",
                         "function": {
                             "name": block.get("name"),
                             "arguments": json.dumps(block.get("input", {})),
                         },
-                    })
+                    }
+                    sig = THOUGHT_SIG.get(block.get("id"))
+                    if sig:
+                        tc["extra_content"] = {"google": {"thought_signature": sig}}
+                    tool_calls.append(tc)
                 elif btype == "tool_result":
                     c = block.get("content")
                     if isinstance(c, list):
@@ -204,6 +208,23 @@ STOP_MAP = {
 }
 
 
+# Gemini 3.x richiede che ogni function call riporti il suo thought_signature.
+# Lo conserviamo in memoria (id tool -> signature) per rimandarlo al turno successivo.
+THOUGHT_SIG = {}
+MAX_SIG_CACHE = 2048
+
+
+def _extract_thought_sig(tc):
+    return ((tc.get("extra_content") or {}).get("google") or {}).get("thought_signature")
+
+
+def _cache_sig(tid, sig):
+    if tid and sig:
+        THOUGHT_SIG[tid] = sig
+        while len(THOUGHT_SIG) > MAX_SIG_CACHE:
+            THOUGHT_SIG.pop(next(iter(THOUGHT_SIG)))
+
+
 def openai_to_anthropic(resp, requested_model):
     choice = (resp.get("choices") or [{}])[0]
     message = choice.get("message", {})
@@ -219,9 +240,11 @@ def openai_to_anthropic(resp, requested_model):
             args = json.loads(fn.get("arguments") or "{}")
         except json.JSONDecodeError:
             args = {}
+        tid = tc.get("id") or f"toolu_{uuid.uuid4().hex[:24]}"
+        _cache_sig(tid, _extract_thought_sig(tc))
         content.append({
             "type": "tool_use",
-            "id": tc.get("id") or f"toolu_{uuid.uuid4().hex[:24]}",
+            "id": tid,
             "name": fn.get("name"),
             "input": args,
         })
@@ -370,6 +393,7 @@ def stream_openai_to_anthropic(upstream, requested_model, write):
                     "type": "content_block_start", "index": st["block"],
                     "content_block": {"type": "tool_use", "id": st["id"], "name": st["name"], "input": {}},
                 }))
+            _cache_sig(tool_state[oi]["id"], _extract_thought_sig(tc))
             fn = tc.get("function") or {}
             if fn.get("name") and not tool_state[oi]["name"]:
                 tool_state[oi]["name"] = fn["name"]
