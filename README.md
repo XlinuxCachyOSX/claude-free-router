@@ -33,7 +33,7 @@ Modifica `.env` e inserisci almeno una API key (di qualsiasi provider).
 
 | Provider | Link chiave | Modelli gratuiti |
 |----------|-------------|------------------|
-| **Groq** | https://console.groq.com/keys | llama-3.3-70b, llama-3.1-8b |
+| **Groq** | https://console.groq.com/keys | gpt-oss-120b, gpt-oss-20b |
 | **Google Gemini** | https://aistudio.google.com/app/apikey | gemini-2.0-flash |
 | **Cerebras** | https://cloud.cerebras.ai/ | llama3.3-70b |
 | **OpenRouter** | https://openrouter.ai/keys | modelli `:free` |
