@@ -48,11 +48,13 @@
       "priority": 4,
       "base_url": "https://openrouter.ai/api/v1",
       "api_key_env": "OPENROUTER_API_KEY",
-      "default_model": "deepseek/deepseek-chat-v3-0324:free",
+      "max_tokens_cap": 32768,
+      "default_model": "nvidia/nemotron-3-ultra-550b-a55b:free",
       "models": {
-        "claude-3-5-sonnet*": "deepseek/deepseek-chat-v3-0324:free",
-        "claude-3-opus*": "deepseek/deepseek-r1:free",
-        "*": "deepseek/deepseek-chat-v3-0324:free"
+        "claude-opus*": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "claude-sonnet*": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "claude-haiku*": "nvidia/nemotron-3.5-lightning:free",
+        "*": "nvidia/nemotron-3-ultra-550b-a55b:free"
       },
       "extra_headers": {
         "HTTP-Referer": "https://github.com/",
