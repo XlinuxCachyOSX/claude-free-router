@@ -29,6 +29,11 @@ DEFAULT_TIMEOUT = int(os.environ.get("CFR_TIMEOUT", "120"))
 # Se valorizzato, l'accesso richiede questo token (header x-api-key o Authorization).
 # Il client deve usarlo come ANTHROPIC_API_KEY. Se vuoto, l'accesso e' libero.
 AUTH_TOKEN = os.environ.get("CFR_AUTH_TOKEN", "")
+# Keep-alive: su Render la variabile RENDER_EXTERNAL_URL e' impostata in automatico.
+# Se presente (o se imposti CFR_SELF_URL), il server pinga il proprio URL pubblico
+# ogni CFR_KEEPALIVE secondi per evitare lo spegnimento per inattivita' (piano free).
+KEEPALIVE_URL = (os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("CFR_SELF_URL") or "").rstrip("/")
+KEEPALIVE_INTERVAL = int(os.environ.get("CFR_KEEPALIVE", "600"))
 
 
 # --------------------------------------------------------------------------- #
@@ -524,6 +529,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, openai_to_anthropic(data, requested_model))
 
 
+def _keepalive_loop():
+    url = KEEPALIVE_URL + "/health"
+    while True:
+        time.sleep(KEEPALIVE_INTERVAL)
+        try:
+            urllib.request.urlopen(url, timeout=30).read()
+        except Exception:
+            pass
+
+
 def main():
     config = load_config()
     if not config["_providers"]:
@@ -545,6 +560,10 @@ def main():
     print("    claude")
     print("=" * 56)
     server = ThreadingHTTPServer((host, port), Handler)
+    if KEEPALIVE_URL:
+        import threading
+        threading.Thread(target=_keepalive_loop, daemon=True).start()
+        print(f"  Keep-alive attivo: ping {KEEPALIVE_URL}/health ogni {KEEPALIVE_INTERVAL}s")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
