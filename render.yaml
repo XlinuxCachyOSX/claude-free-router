@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: claude-free-router
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CFR_AUTH_TOKEN
+        sync: false

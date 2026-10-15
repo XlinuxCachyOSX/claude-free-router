@@ -131,6 +131,8 @@ Variabili d'ambiente utili (hanno priorità su `providers.json`):
 | `CFR_PORT` | `8787` | Porta di ascolto |
 | `CFR_TIMEOUT` | `120` | Timeout (secondi) verso i provider |
 | `CFR_CONFIG` | `providers.json` | Percorso alternativo della config |
+| `CFR_AUTH_TOKEN` | *(vuoto)* | Se impostato, richiede questo token (header `x-api-key`/`Authorization`). Consigliato in deploy pubblico |
+| `PORT` | — | Usata da Render/altri hosting come porta di ascolto (alternativa a `CFR_PORT`) |
 
 ### Aggiungere un provider
 
@@ -165,13 +167,53 @@ Così quando Groq esaurisce la quota oraria, subentra Gemini, poi OpenRouter, ec
 - Alcuni provider non supportano immagini: verranno ignorate o daranno errore.
 - Le quote gratuite hanno limiti di richieste/minuto.
 
+## Deploy su Render (URL pubblico, sempre raggiungibile)
+
+Vuoi che il router funzioni **anche con il tuo PC spento**, così lo usi da qualsiasi dispositivo (o lo condividi con altri)? Pubblicalo su **Render** (piano gratuito, senza carta).
+
+### 1. Pubblica il fork/repo su Render
+
+1. Vai su https://render.com e accedi con GitHub.
+2. **New +** → **Blueprint** → seleziona il repo `claude-free-router` (usa il file `render.yaml` incluso).
+3. Quando richiesto, inserisci le **Environment Variables**:
+   - `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY` → le tue chiavi
+   - `CFR_AUTH_TOKEN` → **una password segreta a tua scelta** (es. `una-frase-lunga-e-casuale`)
+4. Clicca **Apply** e attendi il deploy. Ottieni un URL tipo:
+   `https://claude-free-router.onrender.com`
+
+> In alternativa (senza Blueprint): **New +** → **Web Service** → repo → *Runtime: Docker* → aggiungi le stesse env vars.
+
+### 2. Usa l'URL pubblico da Claude Code
+
+```bash
+export ANTHROPIC_BASE_URL=https://claude-free-router.onrender.com
+export ANTHROPIC_API_KEY=una-frase-lunga-e-casuale   # = il tuo CFR_AUTH_TOKEN
+claude
+```
+
+Chiunque conosca **URL + token** può usarlo (dal proprio PC, telefono, ecc.).
+
+### 3. Tenerlo sempre "sveglio" (opzionale)
+
+Il piano gratuito di Render mette il servizio in pausa dopo ~15 minuti di inattività (si risveglia da solo in ~1 minuto). Per evitarlo, crea un monitor gratuito che visita `/health` ogni ~10 minuti:
+
+- **UptimeRobot** (https://uptimerobot.com) → *Add Monitor* → tipo **HTTP(s)** → URL `https://<tuo-servizio>.onrender.com/health` → intervallo **10 minuti** (gratis).
+
+### Sicurezza
+
+- Imposta **sempre** `CFR_AUTH_TOKEN`: senza, chiunque trovi l'URL consuma le tue quote.
+- Le chiavi dei provider restano **solo** nelle variabili d'ambiente di Render, mai nel codice.
+- `/health` resta pubblico (serve per il monitoraggio), ma non espone nulla di sensibile.
+
 ## Struttura
 
 ```
 claude-free-router/
 ├── server.py                # Proxy Anthropic -> OpenAI-compatibile
-├── providers.example.json   # Config provider (copia in providers.json)
+├── providers.example.json   # Config provider (se manca providers.json usa questo)
 ├── .env.example             # Template API key (copia in .env)
+├── Dockerfile               # Immagine per il deploy (Render, Docker, ecc.)
+├── render.yaml              # Blueprint di deploy su Render
 ├── run.sh                   # Avvio Linux/macOS
 ├── run.bat                  # Avvio Windows (CMD)
 ├── run.ps1                  # Avvio Windows (PowerShell)

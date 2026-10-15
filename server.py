@@ -26,21 +26,24 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = Path(os.environ.get("CFR_CONFIG", BASE_DIR / "providers.json"))
 DEFAULT_TIMEOUT = int(os.environ.get("CFR_TIMEOUT", "120"))
+# Se valorizzato, l'accesso richiede questo token (header x-api-key o Authorization).
+# Il client deve usarlo come ANTHROPIC_API_KEY. Se vuoto, l'accesso e' libero.
+AUTH_TOKEN = os.environ.get("CFR_AUTH_TOKEN", "")
 
 
 # --------------------------------------------------------------------------- #
 # Config
 # --------------------------------------------------------------------------- #
 def load_config():
-    if not CONFIG_PATH.exists():
+    path = CONFIG_PATH
+    if not path.exists():
         example = BASE_DIR / "providers.example.json"
-        print(f"[!] Config non trovata: {CONFIG_PATH}")
-        print(f"[!] Copia {example} in {CONFIG_PATH} e inserisci le tue API key.")
-        sys.exit(1)
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        print(f"[i] Config non trovata ({path}); uso {example.name}")
+        path = example
+    with open(path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
     cfg["host"] = os.environ.get("CFR_HOST") or cfg.get("host", "0.0.0.0")
-    cfg["port"] = int(os.environ.get("CFR_PORT") or cfg.get("port", 8787))
+    cfg["port"] = int(os.environ.get("CFR_PORT") or os.environ.get("PORT") or cfg.get("port", 8787))
     providers = []
     for p in cfg.get("providers", []):
         key = p.get("api_key")
@@ -452,11 +455,22 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(b"0\r\n\r\n")
         self.wfile.flush()
 
+    def _authorized(self):
+        if not AUTH_TOKEN:
+            return True
+        supplied = self.headers.get("x-api-key") or ""
+        if not supplied:
+            auth = self.headers.get("authorization", "")
+            supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else auth.strip()
+        return supplied == AUTH_TOKEN
+
     def do_GET(self):
         if self.path in ("/", "/health"):
             return self._json(200, {"status": "ok", "service": "claude-free-router",
                                     "providers": [p["name"] for p in self.config["_providers"]]})
         if self.path == "/v1/models":
+            if not self._authorized():
+                return self._json(401, {"type": "error", "error": {"type": "authentication_error", "message": "token non valido"}})
             data = [{"id": m, "object": "model", "type": "model"}
                     for m in ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]]
             return self._json(200, {"object": "list", "data": data})
@@ -465,6 +479,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path not in ("/v1/messages", "/v1/messages?beta=true"):
             return self._json(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})
+        if not self._authorized():
+            return self._json(401, {"type": "error", "error": {"type": "authentication_error", "message": "token non valido"}})
 
         length = int(self.headers.get("Content-Length", 0))
         try:
