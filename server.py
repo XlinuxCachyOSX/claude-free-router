@@ -477,14 +477,18 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})
 
     def do_POST(self):
+        # Leggi SEMPRE il body prima di rispondere: su connessioni keep-alive un
+        # corpo non letto resta nel buffer e corrompe la richiesta successiva.
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length) if length else b""
+
         if self.path not in ("/v1/messages", "/v1/messages?beta=true"):
             return self._json(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})
         if not self._authorized():
             return self._json(401, {"type": "error", "error": {"type": "authentication_error", "message": "token non valido"}})
 
-        length = int(self.headers.get("Content-Length", 0))
         try:
-            body = json.loads(self.rfile.read(length) or b"{}")
+            body = json.loads(raw or b"{}")
         except json.JSONDecodeError:
             return self._json(400, {"type": "error", "error": {"type": "invalid_request_error", "message": "bad json"}})
 
